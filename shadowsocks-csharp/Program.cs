@@ -1,14 +1,12 @@
 ﻿using Shadowsocks.Controller;
-using Shadowsocks.Properties;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using Shadowsocks.Model;
+using Shadowsocks.Util;
 #if !_CONSOLE
 using Shadowsocks.View;
 #endif
@@ -28,19 +26,20 @@ namespace Shadowsocks
         [STAThread]
         static void Main(string[] args)
         {
+            Directory.SetCurrentDirectory(Path.GetDirectoryName(Utils.GetExecutablePath()));
 #if !_CONSOLE
-            foreach (string arg in args)
+            foreach (var arg in args)
             {
                 if (arg == "--setautorun")
                 {
-                    if (!Controller.AutoStartup.Switch())
+                    if (!AutoStartup.Switch())
                     {
                         Environment.ExitCode = 1;
                     }
                     return;
                 }
             }
-            using (Mutex mutex = new Mutex(false, "Global\\ShadowsocksR_" + Application.StartupPath.GetHashCode()))
+            using (var mutex = new Mutex(false, "Global\\ShadowsocksR_" + Directory.GetCurrentDirectory().GetDeterministicHashCode()))
             {
                 AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
                 Application.EnableVisualStyles();
@@ -56,46 +55,43 @@ namespace Shadowsocks
                     return;
                 }
 #endif
-                Directory.SetCurrentDirectory(Application.StartupPath);
 
-                int try_times = 0;
 #if !_CONSOLE
+                var tryTimes = 0;
                 while (Configuration.Load() == null)
                 {
-                    if (try_times >= 5)
+                    if (tryTimes >= 5)
                         return;
-                    using (InputPassword dlg = new InputPassword())
+                    using (var dlg = new InputPassword())
                     {
                         if (dlg.ShowDialog() == DialogResult.OK)
                             Configuration.SetPassword(dlg.password);
                         else
                             return;
                     }
-                    try_times += 1;
+                    tryTimes += 1;
                 }
 #endif
-                //#if !DEBUG
-                if (try_times > 0)
-                    Logging.save_to_file = false;
-                Logging.OpenLogFile();
-                //#endif
+
                 _controller = new ShadowsocksController();
                 HostMap.Instance().LoadHostFile();
 
-#if _DOTNET_CURRENT
-                // Enable Modern TLS when .NET 4.5+ installed.
-                if (Util.EnvCheck.CheckDotNet45())
-                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
-#endif
+                // Logging
+                Logging.DefaultOut = Console.Out;
+                Logging.DefaultError = Console.Error;
 
+#if _DOTNET_4_0
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+
+#endif
 #if !_CONSOLE
                 _viewController = new MenuViewController(_controller);
+                SystemEvents.SessionEnding += _viewController.Quit_Click;
 #endif
 
                 _controller.Start();
 
 #if !_CONSOLE
-                //Util.Utils.ReleaseMemory();
 
                 Application.Run();
             }
@@ -112,7 +108,7 @@ namespace Shadowsocks
                 case PowerModes.Resume:
                     if (_controller != null)
                     {
-                        System.Timers.Timer timer = new System.Timers.Timer(5 * 1000);
+                        var timer = new System.Timers.Timer(5 * 1000);
                         timer.Elapsed += Timer_Elapsed;
                         timer.AutoReset = false;
                         timer.Enabled = true;
@@ -120,7 +116,7 @@ namespace Shadowsocks
                     }
                     break;
                 case PowerModes.Suspend:
-                    if (_controller != null) _controller.Stop();
+                    _controller?.Stop();
                     break;
             }
         }
@@ -129,7 +125,7 @@ namespace Shadowsocks
         {
             try
             {
-                if (_controller != null) _controller.Start();
+                _controller?.Start();
             }
             catch (Exception ex)
             {
@@ -139,7 +135,7 @@ namespace Shadowsocks
             {
                 try
                 {
-                    System.Timers.Timer timer = (System.Timers.Timer)sender;
+                    var timer = (System.Timers.Timer)sender;
                     timer.Enabled = false;
                     timer.Stop();
                     timer.Dispose();
@@ -153,14 +149,14 @@ namespace Shadowsocks
 
         private static void Application_ApplicationExit(object sender, EventArgs e)
         {
-            if (_controller != null) _controller.Stop();
+            _controller?.Stop();
             _controller = null;
         }
 
-        private static int exited = 0;
+        private static int _exited;
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            if (Interlocked.Increment(ref exited) == 1)
+            if (Interlocked.Increment(ref _exited) == 1)
             {
                 Logging.Log(LogLevel.Error, e.ExceptionObject != null ? e.ExceptionObject.ToString() : "");
                 MessageBox.Show(I18N.GetString("Unexpected error, ShadowsocksR will exit.") +

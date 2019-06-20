@@ -1,13 +1,7 @@
 ﻿using Shadowsocks.Model;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Xml;
-using System.Windows.Forms;
 
 namespace Shadowsocks.Controller
 {
@@ -19,8 +13,6 @@ namespace Shadowsocks.Controller
         public string FreeNodeResult;
         public ServerSubscribe subscribeTask;
         public bool noitify;
-
-        public const string Name = "ShadowsocksR";
 
         public void CheckUpdate(Configuration config, ServerSubscribe subscribeTask, bool use_proxy, bool noitify)
         {
@@ -50,8 +42,9 @@ namespace Shadowsocks.Controller
                 //UseProxy = !UseProxy;
                 this.subscribeTask = subscribeTask;
                 string URL = subscribeTask.URL;
+
                 http.DownloadStringCompleted += http_DownloadStringCompleted;
-                http.DownloadStringAsync(new Uri(URL != null ? URL : UpdateURL));
+                http.DownloadStringAsync(new Uri(URL ?? UpdateURL));
             }
             catch (Exception e)
             {

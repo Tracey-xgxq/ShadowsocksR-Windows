@@ -1,16 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.IO;
-using System.Diagnostics;
 #if !_CONSOLE
-using SimpleJson;
 #endif
 using Shadowsocks.Controller;
 using System.Text.RegularExpressions;
 using System.Net;
-using System.Net.Sockets;
-using Shadowsocks.Encryption;
+using Shadowsocks.Proxy;
 
 namespace Shadowsocks.Model
 {
@@ -20,7 +16,7 @@ namespace Shadowsocks.Model
         public DateTime updateTime;
         public string host;
         public bool force_expired;
-         public bool isExpired(string host)
+        public bool isExpired(string host)
         {
             if (updateTime == null) return true;
             if (this.host != host) return true;
@@ -107,8 +103,8 @@ namespace Shadowsocks.Model
     {
         public string id;
         public string server;
-        public int server_port;
-        public int server_udp_port;
+        public ushort server_port;
+        public ushort server_udp_port;
         public string password;
         public string method;
         public string protocol;
@@ -382,7 +378,7 @@ namespace Shadowsocks.Model
                 throw new FormatException();
 
             server = match.Groups[1].Value;
-            server_port = int.Parse(match.Groups[2].Value);
+            server_port = ushort.Parse(match.Groups[2].Value);
             protocol = match.Groups[3].Value.Length == 0 ? "origin" : match.Groups[3].Value;
             protocol = protocol.Replace("_compatible", "");
             method = match.Groups[4].Value;
@@ -414,7 +410,7 @@ namespace Shadowsocks.Model
             }
             if (params_dict.ContainsKey("udpport"))
             {
-                server_udp_port = int.Parse(params_dict["udpport"]);
+                server_udp_port = ushort.Parse(params_dict["udpport"]);
             }
             if (!String.IsNullOrEmpty(force_group))
                 group = force_group;
@@ -437,7 +433,7 @@ namespace Shadowsocks.Model
             method = match.Groups["method"].Value;
             password = match.Groups["password"].Value;
             server = match.Groups["hostname"].Value;
-            server_port = int.Parse(match.Groups["port"].Value);
+            server_port = ushort.Parse(match.Groups["port"].Value);
             if (!String.IsNullOrEmpty(force_group))
                 group = force_group;
             else
