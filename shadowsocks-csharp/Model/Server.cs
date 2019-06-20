@@ -1,16 +1,10 @@
+﻿using Shadowsocks.Controller;
+using Shadowsocks.Proxy;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using System.Diagnostics;
-#if !_CONSOLE
-using SimpleJson;
-#endif
-using Shadowsocks.Controller;
-using System.Text.RegularExpressions;
 using System.Net;
-using System.Net.Sockets;
-using Shadowsocks.Encryption;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Shadowsocks.Model
 {
@@ -20,7 +14,7 @@ namespace Shadowsocks.Model
         public DateTime updateTime;
         public string host;
         public bool force_expired;
-         public bool isExpired(string host)
+        public bool isExpired(string host)
         {
             if (updateTime == null) return true;
             if (this.host != host) return true;
@@ -38,7 +32,7 @@ namespace Shadowsocks.Model
 
     public class Connections
     {
-        private System.Collections.Generic.Dictionary<IHandler, Int32> sockets = new Dictionary<IHandler, int>();
+        private Dictionary<IHandler, int> sockets = new Dictionary<IHandler, int>();
         public bool AddRef(IHandler socket)
         {
             lock (this)
@@ -209,57 +203,16 @@ namespace Shadowsocks.Model
                 {
                     return "[" + server + "]:" + server_port;
                 }
-                else
-                {
-                    return server + ":" + server_port;
-                }
-            }
-            else
-            {
-                if (server.IndexOf(':') >= 0)
-                {
-                    return remarks + " ([" + server + "]:" + server_port + ")";
-                }
-                else
-                {
-                    return remarks + " (" + server + ":" + server_port + ")";
-                }
-            }
-        }
 
-        public string HiddenName(bool hide = true)
-        {
-            if (string.IsNullOrEmpty(server))
-            {
-                return I18N.GetString("New server");
+                return server + ":" + server_port;
             }
-            string server_alter_name = server;
-            if (hide)
+
+            if (server.IndexOf(':') >= 0)
             {
-                server_alter_name = Util.ServerName.HideServerAddr(server);
+                return remarks + " ([" + server + "]:" + server_port + ")";
             }
-            if (string.IsNullOrEmpty(remarks_base64))
-            {
-                if (server.IndexOf(':') >= 0)
-                {
-                    return "[" + server_alter_name + "]:" + server_port;
-                }
-                else
-                {
-                    return server_alter_name + ":" + server_port;
-                }
-            }
-            else
-            {
-                if (server.IndexOf(':') >= 0)
-                {
-                    return remarks + " ([" + server_alter_name + "]:" + server_port + ")";
-                }
-                else
-                {
-                    return remarks + " (" + server_alter_name + ":" + server_port + ")";
-                }
-            }
+
+            return remarks + " (" + server + ":" + server_port + ")";
         }
 
         public Server Clone()
@@ -416,7 +369,7 @@ namespace Shadowsocks.Model
             {
                 server_udp_port = ushort.Parse(params_dict["udpport"]);
             }
-            if (!String.IsNullOrEmpty(force_group))
+            if (!string.IsNullOrEmpty(force_group))
                 group = force_group;
         }
 
@@ -438,17 +391,10 @@ namespace Shadowsocks.Model
             password = match.Groups["password"].Value;
             server = match.Groups["hostname"].Value;
             server_port = ushort.Parse(match.Groups["port"].Value);
-            if (!String.IsNullOrEmpty(force_group))
+            if (!string.IsNullOrEmpty(force_group))
                 group = force_group;
             else
                 group = "";
-        }
-
-        public string GetSSLinkForServer()
-        {
-            string parts = method + ":" + password + "@" + server + ":" + server_port;
-            string base64 = System.Convert.ToBase64String(Encoding.UTF8.GetBytes(parts)).Replace("=", "");
-            return "ss://" + base64;
         }
 
         public string GetSSRLinkForServer()
@@ -473,7 +419,7 @@ namespace Shadowsocks.Model
             }
             if (server_udp_port > 0)
             {
-                param_str += "&udpport=" + server_udp_port.ToString();
+                param_str += "&udpport=" + server_udp_port;
             }
             string base64 = Util.Base64.EncodeUrlSafeBase64(main_part + "/?" + param_str);
             return "ssr://" + base64;
@@ -491,20 +437,20 @@ namespace Shadowsocks.Model
 
         public object getObfsData()
         {
-            return this.obfsdata;
+            return obfsdata;
         }
         public void setObfsData(object data)
         {
-            this.obfsdata = data;
+            obfsdata = data;
         }
 
         public object getProtocolData()
         {
-            return this.protocoldata;
+            return protocoldata;
         }
         public void setProtocolData(object data)
         {
-            this.protocoldata = data;
+            protocoldata = data;
         }
     }
 }

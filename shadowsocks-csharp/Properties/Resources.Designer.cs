@@ -19,7 +19,7 @@ namespace Shadowsocks.Properties {
     // 类通过类似于 ResGen 或 Visual Studio 的工具自动生成的。
     // 若要添加或移除成员，请编辑 .ResX 文件，然后重新运行 ResGen
     // (以 /str 作为命令选项)，或重新生成 VS 项目。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -39,7 +39,7 @@ namespace Shadowsocks.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Shadowsocks.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("shadowsocks.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -47,7 +47,7 @@ namespace Shadowsocks.Properties {
         }
         
         /// <summary>
-        ///   使用此强类型资源类，为所有资源查找
+        ///   重写当前线程的 CurrentUICulture 属性
         ///   重写当前线程的 CurrentUICulture 属性。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
@@ -61,9 +61,21 @@ namespace Shadowsocks.Properties {
         }
         
         /// <summary>
+        ///   查找 System.Byte[] 类型的本地化资源。
+        /// </summary>
+        internal static byte[] abp_js {
+            get {
+                object obj = ResourceManager.GetObject("abp_js", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 # translation for Simplified Chinese
         ///
         ///Shadowsocks=Shadowsocks
+        ///ShadowsocksR=ShadowsocksR
+        ///: =：
         ///
         ///# Menu items
         ///
@@ -83,8 +95,7 @@ namespace Shadowsocks.Properties {
         ///Import servers from file...=从文件导入服务器...
         ///Servers Subscribe=服务器订阅
         ///Subscribe setting...=SSR服务器订阅设置...
-        ///Update subscribe SSR node=更新SSR服务器订阅
-        ///Update subscr [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///Update subscribe S [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         internal static string cn {
             get {
@@ -113,33 +124,14 @@ namespace Shadowsocks.Properties {
         }
         
         /// <summary>
-        ///   查找 System.Byte[] 类型的本地化资源。
-        /// </summary>
-        internal static byte[] mgwz_dll {
-            get {
-                object obj = ResourceManager.GetObject("mgwz_dll", resourceCulture);
-                return ((byte[])(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查找 System.Drawing.Bitmap 类型的本地化资源。
-        /// </summary>
-        internal static System.Drawing.Bitmap ngnl {
-            get {
-                object obj = ResourceManager.GetObject("ngnl", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
         ///   查找类似 listen-address __PRIVOXY_BIND_IP__:__PRIVOXY_BIND_PORT__
+        ///toggle 0
+        ///logfile ShadowsocksR.log
         ///show-on-task-bar 0
         ///activity-animation 0
         ///forward-socks5 / 127.0.0.1:__SOCKS_PORT__ .
+        ///max-client-connections 2048
         ///hide-console
-        ///__BYPASS_ACTION__
-        ///
         /// 的本地化字符串。
         /// </summary>
         internal static string privoxy_conf {
@@ -223,6 +215,8 @@ namespace Shadowsocks.Properties {
         ///   查找类似 # translation for Traditional Chinese
         ///
         ///Shadowsocks=Shadowsocks
+        ///ShadowsocksR=ShadowsocksR
+        ///: =：
         ///
         ///# Menu items
         ///
@@ -242,8 +236,7 @@ namespace Shadowsocks.Properties {
         ///Import servers from file...=從文件導入伺服器...
         ///Servers Subscribe=伺服器訂閱
         ///Subscribe setting...=SSR伺服器訂閱設置...
-        ///Update subscribe SSR node=更新SSR伺服器訂閱
-        ///Update su [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///Update subscri [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         internal static string zh_tw {
             get {
