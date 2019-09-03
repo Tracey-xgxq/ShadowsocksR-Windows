@@ -7,7 +7,6 @@ using Shadowsocks.Model;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -17,9 +16,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace Shadowsocks.Util
 {
@@ -35,7 +31,8 @@ namespace Shadowsocks.Util
 
         [DllImport(@"kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetProcessWorkingSetSize(IntPtr process, UIntPtr minimumWorkingSetSize, UIntPtr maximumWorkingSetSize);
+        private static extern bool SetProcessWorkingSetSize(IntPtr process, UIntPtr minimumWorkingSetSize,
+                UIntPtr maximumWorkingSetSize);
 
         public static void ReleaseMemory(bool removePages = true)
         {
@@ -73,7 +70,8 @@ namespace Shadowsocks.Util
                 }
                 else
                 {
-                    SetProcessWorkingSetSize(CurrentProcess.Handle, (UIntPtr)0xFFFFFFFFFFFFFFFF, (UIntPtr)0xFFFFFFFFFFFFFFFF);
+                    SetProcessWorkingSetSize(CurrentProcess.Handle, (UIntPtr)0xFFFFFFFFFFFFFFFF,
+                            (UIntPtr)0xFFFFFFFFFFFFFFFF);
                 }
             }
         }
@@ -92,22 +90,31 @@ namespace Shadowsocks.Util
                     sb.Write(buffer, 0, n);
                 }
             }
+
             return Encoding.UTF8.GetString(sb.ToArray());
         }
 
-        public static void RandBytes(byte[] buf, int length)
+        public static void RandBytes(byte[] buf, int length = -1)
         {
+            if (length == -1)
+            {
+                length = buf.Length;
+            }
             var temp = new byte[length];
-            var rngServiceProvider = new RNGCryptoServiceProvider();
-            rngServiceProvider.GetBytes(temp);
+            using (var rngServiceProvider = new RNGCryptoServiceProvider())
+            {
+                rngServiceProvider.GetBytes(temp);
+            }
             temp.CopyTo(buf, 0);
         }
 
         public static uint RandUInt32()
         {
             var temp = new byte[4];
-            var rngServiceProvider = new RNGCryptoServiceProvider();
-            rngServiceProvider.GetBytes(temp);
+            using (var rngServiceProvider = new RNGCryptoServiceProvider())
+            {
+                rngServiceProvider.GetBytes(temp);
+            }
             return BitConverter.ToUInt32(temp, 0);
         }
 
@@ -131,6 +138,7 @@ namespace Shadowsocks.Util
                 if (target[target_offset + i] != m[m_offset + i])
                     return false;
             }
+
             return true;
         }
 
@@ -148,6 +156,7 @@ namespace Shadowsocks.Util
                             if (target[i + j] != m[j])
                                 break;
                         }
+
                         if (j >= m.Length)
                         {
                             return i;
@@ -155,6 +164,7 @@ namespace Shadowsocks.Util
                     }
                 }
             }
+
             return -1;
         }
 
@@ -168,6 +178,7 @@ namespace Shadowsocks.Util
                 if (addr[index] != net_addr[index])
                     return false;
             }
+
             if ((addr[index] >> (i - netmask)) != (net_addr[index] >> (i - netmask)))
                 return false;
             return true;
@@ -199,14 +210,15 @@ namespace Shadowsocks.Util
             {
                 var netmasks = new[]
                 {
-                    "127.0.0.0/8",
-                    "169.254.0.0/16"
+                        "127.0.0.0/8",
+                        "169.254.0.0/16"
                 };
                 foreach (var netmask in netmasks)
                 {
                     if (isMatchSubNet(ip, netmask))
                         return true;
                 }
+
                 return false;
             }
 
@@ -221,8 +233,10 @@ namespace Shadowsocks.Util
                     if (isMatchSubNet(ip, netmask))
                         return true;
                 }
+
                 return false;
             }
+
             return true;
         }
 
@@ -240,24 +254,25 @@ namespace Shadowsocks.Util
                     return false;
                 var netmasks = new[]
                 {
-                    "0.0.0.0/8",
-                    "10.0.0.0/8",
-                    //"100.64.0.0/10", //部分地区运营商貌似在使用这个，这个可能不安全
-                    "127.0.0.0/8",
-                    "169.254.0.0/16",
-                    "172.16.0.0/12",
-                    //"192.0.0.0/24",
-                    //"192.0.2.0/24",
-                    "192.168.0.0/16"
-                    //"198.18.0.0/15",
-                    //"198.51.100.0/24",
-                    //"203.0.113.0/24",
+                        "0.0.0.0/8",
+                        "10.0.0.0/8",
+                        //"100.64.0.0/10", //部分地区运营商貌似在使用这个，这个可能不安全
+                        "127.0.0.0/8",
+                        "169.254.0.0/16",
+                        "172.16.0.0/12",
+                        //"192.0.0.0/24",
+                        //"192.0.2.0/24",
+                        "192.168.0.0/16"
+                        //"198.18.0.0/15",
+                        //"198.51.100.0/24",
+                        //"203.0.113.0/24",
                 };
                 foreach (var netmask in netmasks)
                 {
                     if (isMatchSubNet(ip, netmask))
                         return true;
                 }
+
                 return false;
             }
 
@@ -274,8 +289,10 @@ namespace Shadowsocks.Util
                     if (isMatchSubNet(ip, netmask))
                         return true;
                 }
+
                 return false;
             }
+
             return true;
         }
 
@@ -316,6 +333,7 @@ namespace Shadowsocks.Util
                     ret += str[i];
                 }
             }
+
             return ret;
         }
 
@@ -346,6 +364,7 @@ namespace Shadowsocks.Util
             {
                 Logging.Info($@"DNS query {host} answer {ret_ipAddress}");
             }
+
             return ret_ipAddress;
         }
 
@@ -359,17 +378,19 @@ namespace Shadowsocks.Util
                     {
                         UseCache = false
                     };
-                    IPAddress r = null;
+                    IPAddress r;
                     if (IPv6_first)
                     {
                         try
                         {
-                            r = client.Query(host, QueryType.AAAA).Answers.OfType<AaaaRecord>().FirstOrDefault()?.Address;
+                            r = client.Query(host, QueryType.AAAA).Answers.OfType<AaaaRecord>().FirstOrDefault()
+                                    ?.Address;
                         }
                         catch (DnsResponseException)
                         {
                             client.UseTcpOnly = true;
-                            r = client.Query(host, QueryType.AAAA).Answers.OfType<AaaaRecord>().FirstOrDefault()?.Address;
+                            r = client.Query(host, QueryType.AAAA).Answers.OfType<AaaaRecord>().FirstOrDefault()
+                                    ?.Address;
                         }
 
                         if (r != null)
@@ -509,8 +530,9 @@ namespace Shadowsocks.Util
                 var res = p.MainModule.FileName;
                 return res;
             }
+
             var dllPath = GetDllPath();
-            return Path.Combine(Path.GetDirectoryName(dllPath), $@"{Path.GetFileNameWithoutExtension(dllPath)}.exe");
+            return Path.Combine(Path.GetDirectoryName(dllPath) ?? throw new InvalidOperationException(), $@"{Path.GetFileNameWithoutExtension(dllPath)}.exe");
         }
 
         public static string GetDllPath()
@@ -551,20 +573,12 @@ namespace Shadowsocks.Util
                 process.Close();
                 return ret;
             }
+
             return -1;
         }
 
-        public static int GetDpiMul()
-        {
-            int dpi;
-            using (var graphics = Graphics.FromHwnd(IntPtr.Zero))
-            {
-                dpi = (int)graphics.DpiX;
-            }
-            return (dpi * 4 + 48) / 96;
-        }
-
         private static string _tempPath;
+
         // return path to store temporary files
         public static string GetTempPath()
         {
@@ -572,7 +586,8 @@ namespace Shadowsocks.Util
             {
                 try
                 {
-                    _tempPath = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"temp")).FullName;
+                    _tempPath = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"temp"))
+                            .FullName;
                 }
                 catch (Exception e)
                 {
@@ -599,6 +614,7 @@ namespace Shadowsocks.Util
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -672,56 +688,47 @@ namespace Shadowsocks.Util
             return cfgData;
         }
 
-        public static void RegistrySetValue(RegistryKey registry, string name, object value)
+        public static string FormatBytes(long bytes)
         {
-            try
-            {
-                registry.SetValue(name, value);
-            }
-            catch (Exception e)
-            {
-                Logging.LogUsefulException(e);
-            }
-        }
+            const long K = 1024L;
+            const long M = K * 1024L;
+            const long G = M * 1024L;
+            const long T = G * 1024L;
+            const long P = T * 1024L;
+            const long E = P * 1024L;
 
-        public static RegistryKey OpenUserRegKey(string name, bool writable)
-        {
-            var userKey = RegistryKey.OpenRemoteBaseKey(RegistryHive.CurrentUser, string.Empty,
-                    Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32
-            ).OpenSubKey(name, writable);
-            return userKey;
-        }
-
-        public static void BringToFront(this FrameworkElement element)
-        {
-            if (element?.Parent is Panel parent)
+            if (bytes >= M * 990)
             {
-                var maxZ = parent.Children.OfType<UIElement>()
-                        .Where(x => x != element)
-                        .Select(Panel.GetZIndex)
-                        .Max();
-                Panel.SetZIndex(element, maxZ + 1);
-            }
-        }
-
-        public static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-        {
-            if (depObj != null)
-            {
-                for (var i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+                if (bytes >= G * 990)
                 {
-                    var child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child is T dependencyObject)
-                    {
-                        yield return dependencyObject;
-                    }
-
-                    foreach (var childOfChild in FindVisualChildren<T>(child))
-                    {
-                        yield return childOfChild;
-                    }
+                    if (bytes >= P * 990)
+                        return $@"{bytes / (double)E:F3}EB";
+                    if (bytes >= T * 990)
+                        return $@"{bytes / (double)P:F3}PB";
+                    return $@"{bytes / (double)T:F3}TB";
                 }
+
+                if (bytes >= G * 99)
+                    return $@"{bytes / (double)G:F2}GB";
+                if (bytes >= G * 9)
+                    return $@"{bytes / (double)G:F3}GB";
+                return $@"{bytes / (double)G:F4}GB";
             }
+
+            if (bytes >= K * 990)
+            {
+                if (bytes >= M * 100)
+                    return $@"{bytes / (double)M:F1}MB";
+                if (bytes > M * 9.9)
+                    return $@"{bytes / (double)M:F2}MB";
+                return $@"{bytes / (double)M:F3}MB";
+            }
+
+            if (bytes > K * 99)
+                return $@"{bytes / (double)K:F0}KB";
+            if (bytes > 900)
+                return $@"{bytes / (double)K:F1}KB";
+            return bytes == 0 ? $@"{bytes}Byte" : $@"{bytes}Bytes";
         }
     }
 }
