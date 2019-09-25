@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -47,7 +46,7 @@ namespace Shadowsocks.GitHubRelease
             response.EnsureSuccessStatusCode();
             var resultStr = await response.Content.ReadAsStringAsync();
 
-            Debug.WriteLine(resultStr);
+            //Debug.WriteLine(resultStr);
             return resultStr;
         }
     }
