@@ -3,6 +3,9 @@ using Shadowsocks.Controller;
 using Shadowsocks.Encryption;
 using Shadowsocks.Model;
 using System;
+#if !IsDotNetCore
+using System.Collections.Concurrent;
+#endif
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -108,37 +111,6 @@ namespace Shadowsocks.Util
         public static string GetTimestamp(DateTime value)
         {
             return value.ToString("yyyyMMddHHmmssffff");
-        }
-
-        public static string UrlDecode(string str)
-        {
-            var ret = "";
-            for (var i = 0; i < str.Length; ++i)
-            {
-                if (str[i] == '%' && i < str.Length - 2)
-                {
-                    var s = str.Substring(i + 1, 2).ToLower();
-                    var val = 0;
-                    var c1 = s[0];
-                    var c2 = s[1];
-                    val += c1 < 'a' ? c1 - '0' : 10 + (c1 - 'a');
-                    val *= 16;
-                    val += c2 < 'a' ? c2 - '0' : 10 + (c2 - 'a');
-
-                    ret += (char)val;
-                    i += 2;
-                }
-                else if (str[i] == '+')
-                {
-                    ret += ' ';
-                }
-                else
-                {
-                    ret += str[i];
-                }
-            }
-
-            return ret;
         }
 
         public static void SetArrayMinSize<T>(ref T[] array, int size)
@@ -366,37 +338,43 @@ namespace Shadowsocks.Util
             return bytes == 0 ? $@"{bytes}Byte" : $@"{bytes}Bytes";
         }
 
-        public static void URL_Split(string text, ref List<string> outUrls)
-        {
-            while (true)
-            {
-                if (string.IsNullOrEmpty(text))
-                {
-                    return;
-                }
-
-                var ssIndex = text.IndexOf(@"ss://", 1, StringComparison.OrdinalIgnoreCase);
-                var ssrIndex = text.IndexOf(@"ssr://", 1, StringComparison.OrdinalIgnoreCase);
-                var index = ssIndex;
-                if (index == -1 || index > ssrIndex && ssrIndex != -1) index = ssrIndex;
-                if (index == -1)
-                {
-                    outUrls.Insert(0, text);
-                }
-                else
-                {
-                    outUrls.Insert(0, text.Substring(0, index));
-                    text = text.Substring(index);
-                    continue;
-                }
-
-                break;
-            }
-        }
-
         public static IEnumerable<Server> Except(this IEnumerable<Server> x, IList<Server> y)
         {
             return from xi in x let found = y.Any(xi.IsMatchServer) where !found select xi;
         }
+
+        public static IEnumerable<string> GetLines(this string str, bool removeEmptyLines = true)
+        {
+            using var sr = new StringReader(str);
+            string line;
+            while ((line = sr.ReadLine()) != null)
+            {
+                if (removeEmptyLines && string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                yield return line;
+            }
+        }
+
+        public static async void WriteAllTextAsync(string path, string str)
+        {
+#if IsDotNetCore
+            await File.WriteAllTextAsync(path, str);
+#else
+            using var sw = new StreamWriter(path);
+            await sw.WriteAsync(str);
+#endif
+        }
+
+#if !IsDotNetCore
+        public static void Clear<T>(this ConcurrentQueue<T> queue)
+        {
+            while (queue.TryDequeue(out _))
+            {
+
+            }
+        }
+#endif
     }
 }

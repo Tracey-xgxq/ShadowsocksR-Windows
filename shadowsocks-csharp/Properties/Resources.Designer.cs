@@ -85,35 +85,36 @@ namespace Shadowsocks.Properties {
         }
         
         /// <summary>
-        ///   查找类似 # translation for Simplified Chinese
-        ///
-        ///Shadowsocks=Shadowsocks
-        ///ShadowsocksR=ShadowsocksR
-        ///: =：
-        ///
-        ///# Menu items
-        ///
-        ///Mode=系统代理模式
-        ///No modify system proxy=保持当前状态不修改
-        ///Disable system proxy=直连模式
-        ///PAC=PAC 模式
-        ///Global=全局模式
-        ///Proxy rule=代理规则
-        ///Bypass LAN=绕过局域网
-        ///Bypass LAN &amp;&amp; China=绕过局域网和大陆
-        ///Bypass LAN &amp;&amp; not China=绕过局域网和非大陆
-        ///User custom=用户自定义
-        ///Disable bypass=全局
-        ///Servers=服务器
-        ///Edit servers...=编辑服务器...
-        ///Import servers from file...=从文件导入服务器...
-        ///Servers Subscribe=服务器订阅
-        ///Subscribe setting...=SSR服务器订阅设置...
-        ///Update subscribe S [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///   查找类似 1.0.1.0 1.0.1.255
+        ///1.0.2.0 1.0.3.255
+        ///1.0.8.0 1.0.15.255
+        ///1.0.32.0 1.0.63.255
+        ///1.1.0.0 1.1.0.255
+        ///1.1.2.0 1.1.3.255
+        ///1.1.4.0 1.1.7.255
+        ///1.1.8.0 1.1.8.255
+        ///1.1.9.0 1.1.9.255
+        ///1.1.10.0 1.1.11.255
+        ///1.1.12.0 1.1.15.255
+        ///1.1.16.0 1.1.31.255
+        ///1.1.32.0 1.1.63.255
+        ///1.2.0.0 1.2.1.255
+        ///1.2.2.0 1.2.2.255
+        ///1.2.4.0 1.2.4.255
+        ///1.2.5.0 1.2.5.255
+        ///1.2.6.0 1.2.7.255
+        ///1.2.8.0 1.2.8.255
+        ///1.2.9.0 1.2.9.255
+        ///1.2.10.0 1.2.11.255
+        ///1.2.12.0 1.2.15.255
+        ///1.2.16.0 1.2.31.255
+        ///1.2.32.0 1.2.63.255
+        ///1.2.64.0 1.2.127.255
+        ///1.3.0.0 1.3.255 [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
-        internal static string cn {
+        internal static string chn_ip {
             get {
-                return ResourceManager.GetString("cn", resourceCulture);
+                return ResourceManager.GetString("chn_ip", resourceCulture);
             }
         }
         
@@ -143,7 +144,7 @@ namespace Shadowsocks.Properties {
         ///logfile ShadowsocksR.log
         ///show-on-task-bar 0
         ///activity-animation 0
-        ///forward-socks5 / 127.0.0.1:__SOCKS_PORT__ .
+        ///forward-socks5 / __SOCKS_HOST__:__SOCKS_PORT__ .
         ///max-client-connections 2048
         ///hide-console
         /// 的本地化字符串。
@@ -208,39 +209,6 @@ namespace Shadowsocks.Properties {
         internal static string user_rule {
             get {
                 return ResourceManager.GetString("user_rule", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   查找类似 # translation for Traditional Chinese
-        ///
-        ///Shadowsocks=Shadowsocks
-        ///ShadowsocksR=ShadowsocksR
-        ///: =：
-        ///
-        ///# Menu items
-        ///
-        ///Mode=系統代理模式
-        ///No modify system proxy=保持當前狀態不修改
-        ///Disable system proxy=直連模式
-        ///PAC=PAC 模式
-        ///Global=全局模式
-        ///Proxy rule=代理規則
-        ///Bypass LAN=繞過區域網路
-        ///Bypass LAN &amp;&amp; China=繞過區域網路和大陸
-        ///Bypass LAN &amp;&amp; not China=繞過區域網路和非大陸
-        ///User custom=用戶自定義
-        ///Disable bypass=全局
-        ///Servers=伺服器
-        ///Edit servers...=編輯伺服器...
-        ///Import servers from file...=從文件導入伺服器...
-        ///Servers Subscribe=伺服器訂閱
-        ///Subscribe setting...=SSR伺服器訂閱設置...
-        ///Update subscri [字符串的其余部分被截断]&quot;; 的本地化字符串。
-        /// </summary>
-        internal static string zh_tw {
-            get {
-                return ResourceManager.GetString("zh_tw", resourceCulture);
             }
         }
     }

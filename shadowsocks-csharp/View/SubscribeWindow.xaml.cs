@@ -1,6 +1,5 @@
 ﻿using Shadowsocks.Controller;
 using Shadowsocks.Controller.HttpRequest;
-using Shadowsocks.Controller.Service;
 using Shadowsocks.Model;
 using Shadowsocks.Util;
 using Shadowsocks.ViewModel;
@@ -14,7 +13,7 @@ namespace Shadowsocks.View
 {
     public partial class SubscribeWindow
     {
-        public SubscribeWindow(ShadowsocksController controller, UpdateSubscribeManager updateSubscribeManager, UpdateNode updateNodeChecker)
+        public SubscribeWindow(MainController controller)
         {
             InitializeComponent();
             I18NUtil.SetLanguage(Resources, @"SubscribeWindow");
@@ -24,8 +23,6 @@ namespace Shadowsocks.View
                 SubscribeWindowViewModel.SubscribesChanged -= SubscribeWindowViewModel_SubscribesChanged;
             };
             _controller = controller;
-            _updateSubscribeManager = updateSubscribeManager;
-            _updateNodeChecker = updateNodeChecker;
             _controller.ConfigChanged += controller_ConfigChanged;
             LoadCurrentConfiguration();
             SubscribeWindowViewModel.SubscribesChanged += SubscribeWindowViewModel_SubscribesChanged;
@@ -36,12 +33,12 @@ namespace Shadowsocks.View
             ApplyButton.IsEnabled = true;
         }
 
-        private readonly ShadowsocksController _controller;
-        private readonly UpdateNode _updateNodeChecker;
-        private readonly UpdateSubscribeManager _updateSubscribeManager;
+        private readonly MainController _controller;
         private Configuration _modifiedConfiguration;
 
         public SubscribeWindowViewModel SubscribeWindowViewModel { get; set; } = new SubscribeWindowViewModel();
+
+        private bool _isDeleteServer;
 
         private void Window_Loaded(object sender, RoutedEventArgs _)
         {
@@ -55,7 +52,7 @@ namespace Shadowsocks.View
 
         private void LoadCurrentConfiguration()
         {
-            _modifiedConfiguration = _controller.GetConfiguration();
+            _modifiedConfiguration = Global.Load();
             SubscribeWindowViewModel.ReadConfig(_modifiedConfiguration);
 
             ApplyButton.IsEnabled = false;
@@ -68,9 +65,10 @@ namespace Shadowsocks.View
 
         private void DeleteUnusedServer()
         {
-            _modifiedConfiguration.configs.RemoveAll(server =>
+            _modifiedConfiguration.Configs.RemoveAll(server =>
                     !string.IsNullOrEmpty(server.SubTag)
-                    && _modifiedConfiguration.serverSubscribes.All(subscribe => subscribe.Group != server.SubTag));
+                    && _modifiedConfiguration.ServerSubscribes.All(subscribe => subscribe.Tag != server.SubTag));
+            _isDeleteServer = true;
         }
 
         private bool SaveConfig()
@@ -78,18 +76,18 @@ namespace Shadowsocks.View
             var remarks = new HashSet<string>();
             foreach (var serverSubscribe in SubscribeWindowViewModel.SubscribeCollection)
             {
-                if (remarks.Contains(serverSubscribe.Group))
+                if (remarks.Contains(serverSubscribe.Tag))
                 {
                     return false;
                 }
-                remarks.Add(serverSubscribe.Group);
+                remarks.Add(serverSubscribe.Tag);
             }
-            _modifiedConfiguration.serverSubscribes.Clear();
-            _modifiedConfiguration.serverSubscribes.AddRange(SubscribeWindowViewModel.SubscribeCollection);
+            _modifiedConfiguration.ServerSubscribes.Clear();
+            _modifiedConfiguration.ServerSubscribes.AddRange(SubscribeWindowViewModel.SubscribeCollection);
 
-            if (_modifiedConfiguration.configs.Any(server =>
+            if (_modifiedConfiguration.Configs.Any(server =>
             !string.IsNullOrEmpty(server.SubTag)
-            && _modifiedConfiguration.serverSubscribes.All(subscribe => subscribe.Group != server.SubTag)))
+            && _modifiedConfiguration.ServerSubscribes.All(subscribe => subscribe.Tag != server.SubTag)))
             {
                 if (MessageBox.Show(this.GetWindowStringValue(@"SaveQuestion"),
                         UpdateChecker.Name, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes)
@@ -98,25 +96,21 @@ namespace Shadowsocks.View
                     DeleteUnusedServer();
                 }
             }
-            _controller.SaveServersConfig(_modifiedConfiguration);
+            _controller.SaveServersConfig(_modifiedConfiguration, _isDeleteServer);
             return true;
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            if (ApplyButton.IsEnabled)
+            if (Save())
             {
-                if (SaveConfig())
-                {
-                    Close();
-                }
-                else
-                {
-                    SaveError();
-                    return;
-                }
+                Global.UpdateSubscribeManager.CreateTask(Global.GuiConfig, Global.UpdateNodeChecker, true);
+                Close();
             }
-            Close();
+            else
+            {
+                SaveError();
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -128,7 +122,6 @@ namespace Shadowsocks.View
         {
             if (SaveConfig())
             {
-                ApplyButton.IsEnabled = false;
                 return;
             }
             SaveError();
@@ -145,20 +138,12 @@ namespace Shadowsocks.View
             var index = ServerSubscribeListBox.SelectedIndex;
             if (ServerSubscribeListBox.SelectedItem is ServerSubscribe serverSubscribe)
             {
+                var tag = serverSubscribe.Tag;
+                _modifiedConfiguration.Configs.RemoveAll(server => server.SubTag == tag);
+                _isDeleteServer = true;
                 SubscribeWindowViewModel.SubscribeCollection.Remove(serverSubscribe);
             }
-            SetServerListSelectedIndex(index);
-        }
 
-        private void DeleteAllButton_Click(object sender, RoutedEventArgs e)
-        {
-            var index = ServerSubscribeListBox.SelectedIndex;
-            if (ServerSubscribeListBox.SelectedItem is ServerSubscribe serverSubscribe)
-            {
-                var tag = serverSubscribe.Group;
-                _modifiedConfiguration.configs = _modifiedConfiguration.configs.Where(server => server.SubTag != tag).ToList();
-                SubscribeWindowViewModel.SubscribeCollection.Remove(serverSubscribe);
-            }
             SetServerListSelectedIndex(index);
         }
 
@@ -186,11 +171,7 @@ namespace Shadowsocks.View
 
         private bool Save()
         {
-            if (ApplyButton.IsEnabled)
-            {
-                return SaveConfig();
-            }
-            return true;
+            return !ApplyButton.IsEnabled || SaveConfig();
         }
 
         private void SaveError()
@@ -204,8 +185,7 @@ namespace Shadowsocks.View
             {
                 if (Save())
                 {
-                    ApplyButton.IsEnabled = false;
-                    _updateSubscribeManager.CreateTask(_modifiedConfiguration, _updateNodeChecker, true, serverSubscribe);
+                    Global.UpdateSubscribeManager.CreateTask(Global.GuiConfig, Global.UpdateNodeChecker, true, new List<ServerSubscribe> { serverSubscribe });
                 }
                 else
                 {

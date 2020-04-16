@@ -8,52 +8,48 @@ namespace Shadowsocks.Controller.Service
     public class UpdateSubscribeManager
     {
         private Configuration _config;
-        private List<ServerSubscribe> _serverSubscribes;
+        private Queue<ServerSubscribe> _serverSubscribes;
         private UpdateNode _updater;
         private bool _notify;
 
-        public void CreateTask(Configuration config, UpdateNode updater, bool updateManually, ServerSubscribe serverSubscribe = null)
+        public void CreateTask(Configuration config, UpdateNode updater, bool updateManually, List<ServerSubscribe> serverSubscribe = null)
         {
-            if (_config == null)
+            if (_config != null) return;
+            _config = config;
+            _updater = updater;
+            _notify = updateManually;
+            if (serverSubscribe?.Count > 0)
             {
-                _config = config;
-                _updater = updater;
-                _notify = updateManually;
-                _serverSubscribes = new List<ServerSubscribe>();
-                if (serverSubscribe != null)
+                _serverSubscribes = new Queue<ServerSubscribe>(serverSubscribe);
+            }
+            else
+            {
+                _serverSubscribes = new Queue<ServerSubscribe>();
+                if (updateManually)
                 {
-                    _serverSubscribes.Add(serverSubscribe);
+                    config.ServerSubscribes.ForEach(sub => _serverSubscribes.Enqueue(sub));
                 }
                 else
                 {
-                    if (updateManually)
+                    foreach (var server in config.ServerSubscribes.Where(server => server.AutoCheckUpdate))
                     {
-                        _serverSubscribes.AddRange(config.serverSubscribes);
-                    }
-                    else
-                    {
-                        foreach (var server in config.serverSubscribes.Where(server => server.AutoCheckUpdate))
-                        {
-                            _serverSubscribes.Add(server);
-                        }
+                        _serverSubscribes.Enqueue(server);
                     }
                 }
-                Next();
             }
+            Next();
         }
 
-        public bool Next()
+        public void Next()
         {
             if (_serverSubscribes.Count == 0)
             {
                 _config = null;
-                return false;
+                return;
             }
 
-            CurrentServerSubscribe = _serverSubscribes[0];
+            CurrentServerSubscribe = _serverSubscribes.Dequeue();
             _updater.CheckUpdate(_config, CurrentServerSubscribe, _notify);
-            _serverSubscribes.RemoveAt(0);
-            return true;
         }
 
         public ServerSubscribe CurrentServerSubscribe { get; private set; }

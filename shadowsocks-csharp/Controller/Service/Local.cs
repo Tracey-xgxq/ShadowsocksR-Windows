@@ -1,4 +1,5 @@
 ﻿using Shadowsocks.Model;
+using Shadowsocks.Model.Transfer;
 using Shadowsocks.Proxy;
 using System.Diagnostics;
 using System.Net;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Shadowsocks.Controller.Service
 {
-    class Local : Listener.Service
+    public class Local : Listener.Service
     {
         private readonly Configuration _config;
         private readonly ServerTransferTotal _transfer;
@@ -48,7 +49,7 @@ namespace Shadowsocks.Controller.Service
 
         public override bool Handle(byte[] firstPacket, int length, Socket socket)
         {
-            if (!_config.GetPortMapCache().ContainsKey(((IPEndPoint)socket.LocalEndPoint).Port) && !Accept(firstPacket, length))
+            if (!_config.PortMapCache.ContainsKey(((IPEndPoint)socket.LocalEndPoint).Port) && !Accept(firstPacket, length))
             {
                 return false;
             }

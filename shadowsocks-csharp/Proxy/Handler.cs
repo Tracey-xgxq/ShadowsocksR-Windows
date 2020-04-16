@@ -1,6 +1,8 @@
 ﻿using Shadowsocks.Controller;
 using Shadowsocks.Controller.Service;
+using Shadowsocks.Enums;
 using Shadowsocks.Model;
+using Shadowsocks.Model.Transfer;
 using Shadowsocks.Obfs;
 using Shadowsocks.Util;
 using Shadowsocks.Util.NetUtils;
@@ -205,7 +207,7 @@ namespace Shadowsocks.Proxy
 
         public void setServerTransferTotal(ServerTransferTotal transfer)
         {
-            speedTester.transfer = transfer;
+            speedTester.Transfer = transfer;
         }
 
         public int LogSocketException(Exception e)
@@ -347,7 +349,7 @@ namespace Shadowsocks.Proxy
                     handler.cfg.ReconnectTimes = cfg.ReconnectTimes + 1;
                 }
 
-                handler.speedTester.transfer = speedTester.transfer;
+                handler.speedTester.Transfer = speedTester.Transfer;
 
                 var total_len = 0;
                 var newFirstPacket = remoteHeaderSendBuffer;
@@ -623,10 +625,10 @@ namespace Shadowsocks.Proxy
             }
             if (lastErrCode == 0 && server != null && speedTester != null)
             {
-                if (!local_error && speedTester.sizeProtocolRecv == 0 && speedTester.sizeUpload > 0)
+                if (!local_error && speedTester.SizeProtocolRecv == 0 && speedTester.SizeUpload > 0)
                 {
                     if (is_protocol_sendback
-                        || is_obfs_sendback && speedTester.sizeDownload == 0)
+                        || is_obfs_sendback && speedTester.SizeDownload == 0)
                     {
                         lastErrCode = 16;
                         server.SpeedLog.AddErrorDecodeTimes();
@@ -651,7 +653,7 @@ namespace Shadowsocks.Proxy
                     {
                         if (State != ConnectState.READY && State != ConnectState.HANDSHAKE && server != null)
                         {
-                            if (server.GetConnections().DecRef(this))
+                            if (server.Connections.DecRef(this))
                             {
                                 server.SpeedLog.AddDisconnectTimes();
                             }
@@ -676,7 +678,7 @@ namespace Shadowsocks.Proxy
 
                 if (cfg != null && cfg.AutoSwitchOff && server != null)
                 {
-                    if (server.SpeedLog.ErrorPercent.HasValue && server.SpeedLog.ErrorPercent >= 1
+                    if (server.SpeedLog.ErrorPercent.HasValue && server.SpeedLog.ErrorPercent >= 100
                     && (server.SpeedLog.ConnectError >= 3 || server.SpeedLog.ErrorContinuousTimes >= 3 ||
                        server.SpeedLog.ErrorTimeoutTimes >= 3 || server.SpeedLog.ErrorEmptyTimes >= 3))
                     {
@@ -704,7 +706,7 @@ namespace Shadowsocks.Proxy
 
         private bool ConnectProxyServer(string strRemoteHost, int iRemotePort)
         {
-            if (cfg.ProxyType == 0)
+            if (cfg.ProxyType == ProxyType.Socks5)
             {
                 var ret = remote.ConnectSocks5ProxyServer(strRemoteHost, iRemotePort, connectionUDP != null && !server.UdpOverTcp, cfg.Socks5RemoteUsername, cfg.Socks5RemotePassword);
                 remote.SetTcpServer(server.server, server.Server_Port);
@@ -718,7 +720,7 @@ namespace Shadowsocks.Proxy
                 return ret;
             }
 
-            if (cfg.ProxyType == 1)
+            if (cfg.ProxyType == ProxyType.Http)
             {
                 var ret = remote.ConnectHttpProxyServer(strRemoteHost, iRemotePort, cfg.Socks5RemoteUsername, cfg.Socks5RemotePassword, cfg.ProxyUserAgent);
                 remote.SetTcpServer(server.server, server.Server_Port);
@@ -759,17 +761,16 @@ namespace Shadowsocks.Proxy
                     server = getCurrentServer(localPort, select_server, cfg.TargetHost, true, true, cfg.ForceRandom);
                 }
             }
-            speedTester.server = server.server;
+            speedTester.ServerId = server.Id;
             Logging.Info($@"Connect {cfg.TargetHost}:{cfg.TargetPort.ToString()} via {server.server}:{server.Server_Port}");
 
             ResetTimeout(cfg.Ttl);
-            if (cfg.TargetHost != null)
+            if (Global.GuiConfig.ProxyRuleMode != ProxyRuleMode.Disable && cfg.TargetHost != null)
             {
                 var host = cfg.TargetHost;
-
                 if (!IPAddress.TryParse(host, out var ipAddress))
                 {
-                    ipAddress = DnsUtil.DnsBuffer.Get(host) ?? DnsUtil.QueryDns(host, host.IndexOf('.') >= 0 ? cfg.DnsServers : null);
+                    ipAddress = DnsUtil.DnsBuffer.Get(host) ?? DnsUtil.QueryDns(host);
                     if (ipAddress != null)
                     {
                         Logging.Info($@"DNS nolock query {host} answer {ipAddress}");
@@ -796,7 +797,7 @@ namespace Shadowsocks.Proxy
                 {
                     State = ConnectState.CONNECTING;
                 }
-                server.GetConnections().AddRef(this);
+                server.Connections.AddRef(this);
             }
             try
             {
@@ -811,18 +812,18 @@ namespace Shadowsocks.Proxy
                 {
                     if (server.SpeedLog.ErrorContinuousTimes > 10)
                     {
-                        server.DnsBuffer().force_expired = true;
+                        server.DnsBuffer.force_expired = true;
                     }
 
-                    if (server.DnsBuffer().isExpired(serverHost))
+                    if (server.DnsBuffer.IsExpired(serverHost))
                     {
                         var dnsOk = false;
-                        var buf = server.DnsBuffer();
+                        var buf = server.DnsBuffer;
                         if (Monitor.TryEnter(buf, buf.Ip != null ? 100 : 1000000))
                         {
-                            if (buf.isExpired(serverHost))
+                            if (buf.IsExpired(serverHost))
                             {
-                                ipAddress = DnsUtil.QueryDns(serverHost, serverHost.IndexOf('.') >= 0 ? cfg.LocalDnsServers : null);
+                                ipAddress = DnsUtil.QueryDns(serverHost);
 
                                 if (ipAddress != null)
                                 {
@@ -849,9 +850,9 @@ namespace Shadowsocks.Proxy
 
                         if (!dnsOk)
                         {
-                            if (server.DnsBuffer().Ip != null)
+                            if (server.DnsBuffer.Ip != null)
                             {
-                                ipAddress = server.DnsBuffer().Ip;
+                                ipAddress = server.DnsBuffer.Ip;
                             }
                             else
                             {
@@ -864,7 +865,7 @@ namespace Shadowsocks.Proxy
                     }
                     else
                     {
-                        ipAddress = server.DnsBuffer().Ip;
+                        ipAddress = server.DnsBuffer.Ip;
                     }
                 }
                 BeginConnect(ipAddress, serverPort);
@@ -878,7 +879,7 @@ namespace Shadowsocks.Proxy
 
         private void ConnectCallback(IAsyncResult ar)
         {
-            if (ar != null && ar.AsyncState != null)
+            if (ar?.AsyncState != null)
             {
                 ((CallbackStatus)ar.AsyncState).SetIfEqu(1, 0);
                 if (((CallbackStatus)ar.AsyncState).Status != 1)
@@ -1248,7 +1249,7 @@ namespace Shadowsocks.Proxy
                     remote.GetAsyncResultSize(ar);
                     if (speedTester.BeginDownload())
                     {
-                        var pingTime = (int)(speedTester.timeBeginDownload - speedTester.timeBeginUpload).TotalMilliseconds;
+                        var pingTime = Convert.ToInt64((speedTester.TimeBeginDownload - speedTester.TimeBeginUpload).TotalMilliseconds);
                         if (pingTime >= 0)
                             server.SpeedLog.AddConnectTime(pingTime);
                     }
@@ -1331,7 +1332,7 @@ namespace Shadowsocks.Proxy
                     }
                     if (speedTester.BeginDownload())
                     {
-                        var pingTime = (int)(speedTester.timeBeginDownload - speedTester.timeBeginUpload).TotalMilliseconds;
+                        var pingTime = Convert.ToInt64((speedTester.TimeBeginDownload - speedTester.TimeBeginUpload).TotalMilliseconds);
                         if (pingTime >= 0)
                             server.SpeedLog.AddConnectTime(pingTime);
                     }
@@ -1417,7 +1418,7 @@ namespace Shadowsocks.Proxy
                     var bytesRecv = remoteUDP.GetAsyncResultSize(ar);
                     if (speedTester.BeginDownload())
                     {
-                        var pingTime = (int)(speedTester.timeBeginDownload - speedTester.timeBeginUpload).TotalMilliseconds;
+                        var pingTime = Convert.ToInt64((speedTester.TimeBeginDownload - speedTester.TimeBeginUpload).TotalMilliseconds);
                         if (pingTime >= 0)
                             server.SpeedLog.AddConnectTime(pingTime);
                     }
@@ -1535,7 +1536,7 @@ namespace Shadowsocks.Proxy
                             Logging.LogBin(LogLevel.Debug, "remote send", connetionRecvBuffer, bytesRead);
                         }
                     }
-                    if (speedTester.sizeRecv > 0)
+                    if (speedTester.SizeRecv > 0)
                     {
                         connectionSendBufferList = null;
                         server.SpeedLog.ResetContinuousTimes();

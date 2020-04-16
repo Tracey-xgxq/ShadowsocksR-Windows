@@ -1,6 +1,7 @@
-﻿using System;
-using Shadowsocks.Controller.Service;
+﻿using Shadowsocks.Controller.Service;
+using Shadowsocks.Enums;
 using Shadowsocks.Model;
+using System;
 
 namespace Shadowsocks.Controller.SystemProxy
 {
@@ -8,7 +9,7 @@ namespace Shadowsocks.Controller.SystemProxy
     {
         public static void Update(Configuration config, bool forceDisable, PACServer pacSrv)
         {
-            var sysProxyMode = config.sysProxyMode;
+            var sysProxyMode = config.SysProxyMode;
             if (sysProxyMode == ProxyMode.NoModify)
             {
                 return;
@@ -26,7 +27,7 @@ namespace Shadowsocks.Controller.SystemProxy
                 {
                     if (global)
                     {
-                        proxy.Global($@"localhost:{config.localPort}");
+                        proxy.Global($@"localhost:{config.LocalPort}");
                     }
                     else
                     {

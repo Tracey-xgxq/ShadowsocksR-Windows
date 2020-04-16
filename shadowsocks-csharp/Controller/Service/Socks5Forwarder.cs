@@ -1,4 +1,5 @@
-﻿using Shadowsocks.Model;
+﻿using Shadowsocks.Enums;
+using Shadowsocks.Model;
 using Shadowsocks.Proxy;
 using Shadowsocks.Util.NetUtils;
 using System;
@@ -35,7 +36,7 @@ namespace Shadowsocks.Controller.Service
             var handle = IsHandle(firstPacket, length);
             if (handle > 0)
             {
-                if (_config.proxyEnable)
+                if (_config.ProxyEnable)
                 {
                     new Handler().Start(_config, firstPacket, socket, local_sendback_protocol, handle == 2);
                 }
@@ -50,7 +51,7 @@ namespace Shadowsocks.Controller.Service
 
         private int IsHandle(byte[] firstPacket, int length)
         {
-            if (length >= 7 && _config.proxyRuleMode != ProxyRuleMode.Disable)
+            if (length >= 7 && _config.ProxyRuleMode != ProxyRuleMode.Disable)
             {
                 IPAddress ipAddress = null;
                 if (firstPacket[0] == 1)
@@ -73,14 +74,13 @@ namespace Shadowsocks.Controller.Service
                         }
                         else
                         {
-                            if ((_config.proxyRuleMode == ProxyRuleMode.BypassLanAndChina || _config.proxyRuleMode == ProxyRuleMode.BypassLanAndNotChina) && _IPRange != null || _config.proxyRuleMode == ProxyRuleMode.UserCustom)
+                            if ((_config.ProxyRuleMode == ProxyRuleMode.BypassLanAndChina || _config.ProxyRuleMode == ProxyRuleMode.BypassLanAndNotChina) && _IPRange != null || _config.ProxyRuleMode == ProxyRuleMode.UserCustom)
                             {
                                 if (!IPAddress.TryParse(host, out ipAddress))
                                 {
-                                    if (_config.proxyRuleMode == ProxyRuleMode.UserCustom)
+                                    if (_config.ProxyRuleMode == ProxyRuleMode.UserCustom)
                                     {
-                                        var hostMap = HostMap.Instance();
-                                        if (hostMap.GetHost(host, out var host_addr))
+                                        if (HostMap.GetHost(host, out var host_addr))
                                         {
                                             if (!string.IsNullOrEmpty(host_addr))
                                             {
@@ -119,16 +119,14 @@ namespace Shadowsocks.Controller.Service
                                 }
                                 if (ipAddress == null)
                                 {
-                                    ipAddress = DnsUtil.QueryDns(host, host.IndexOf('.') >= 0 ? _config.dnsServer : null);
+                                    ipAddress = DnsUtil.QueryDns(host);
                                     if (ipAddress != null)
                                     {
                                         DnsUtil.DnsBuffer.Set(host, new IPAddress(ipAddress.GetAddressBytes()));
-                                        if (host.IndexOf('.') >= 0)
+                                        if (host.IndexOf('.') >= 0 && IPSubnet.IsLan(ipAddress))
                                         {
-                                            if (IPSubnet.IsLan(ipAddress)) // assume that it is polution if return LAN address
-                                            {
-                                                return CONNECT_REMOTEPROXY;
-                                            }
+                                            // assume that it is pollution if return LAN address
+                                            return CONNECT_REMOTEPROXY;
                                         }
                                     }
                                     else
@@ -148,10 +146,9 @@ namespace Shadowsocks.Controller.Service
                 }
                 if (ipAddress != null)
                 {
-                    if (_config.proxyRuleMode == ProxyRuleMode.UserCustom)
+                    if (_config.ProxyRuleMode == ProxyRuleMode.UserCustom)
                     {
-                        var hostMap = HostMap.Instance();
-                        if (hostMap.GetIP(ipAddress, out var host_addr))
+                        if (HostMap.GetIP(ipAddress, out var host_addr))
                         {
                             var lower_host_addr = host_addr.ToLower();
                             if (lower_host_addr.StartsWith("reject")
@@ -178,7 +175,7 @@ namespace Shadowsocks.Controller.Service
                         {
                             return CONNECT_DIRECT;
                         }
-                        if ((_config.proxyRuleMode == ProxyRuleMode.BypassLanAndChina || _config.proxyRuleMode == ProxyRuleMode.BypassLanAndNotChina) && _IPRange != null
+                        if ((_config.ProxyRuleMode == ProxyRuleMode.BypassLanAndChina || _config.ProxyRuleMode == ProxyRuleMode.BypassLanAndNotChina) && _IPRange != null
                             && ipAddress.AddressFamily == AddressFamily.InterNetwork
                             )
                         {
@@ -269,10 +266,9 @@ namespace Shadowsocks.Controller.Service
                             {
                                 if (!IPAddress.TryParse(_remote_host, out ipAddress))
                                 {
-                                    if (_config.proxyRuleMode == ProxyRuleMode.UserCustom)
+                                    if (_config.ProxyRuleMode == ProxyRuleMode.UserCustom)
                                     {
-                                        var hostMap = HostMap.Instance();
-                                        if (hostMap.GetHost(_remote_host, out var host_addr))
+                                        if (HostMap.GetHost(_remote_host, out var host_addr))
                                         {
                                             if (!string.IsNullOrEmpty(host_addr))
                                             {
@@ -300,7 +296,7 @@ namespace Shadowsocks.Controller.Service
                                 }
                                 if (ipAddress == null)
                                 {
-                                    ipAddress = DnsUtil.QueryDns(_remote_host, _remote_host.IndexOf('.') >= 0 ? _config.localDnsServer : null);
+                                    ipAddress = DnsUtil.QueryDns(_remote_host);
                                 }
                                 if (ipAddress != null)
                                 {
@@ -316,10 +312,9 @@ namespace Shadowsocks.Controller.Service
                         }
                         _remote_port = _targetPort;
                     }
-                    if (ipAddress != null && _config.proxyRuleMode == ProxyRuleMode.UserCustom)
+                    if (ipAddress != null && _config.ProxyRuleMode == ProxyRuleMode.UserCustom)
                     {
-                        var hostMap = HostMap.Instance();
-                        if (hostMap.GetIP(ipAddress, out var host_addr))
+                        if (HostMap.GetIP(ipAddress, out var host_addr))
                         {
                             var lower_host_addr = host_addr.ToLower();
                             if (lower_host_addr.StartsWith("reject")
@@ -332,8 +327,8 @@ namespace Shadowsocks.Controller.Service
                     }
                     if (_local_proxy)
                     {
-                        IPAddress.TryParse(_config.proxyHost, out ipAddress);
-                        _targetPort = _config.proxyPort;
+                        IPAddress.TryParse(_config.ProxyHost, out ipAddress);
+                        _targetPort = _config.ProxyPort;
                     }
                     // ProxyAuth recv only socks5 head, so don't need to save anything else
                     var remoteEP = new IPEndPoint(ipAddress ?? throw new InvalidOperationException(), _targetPort);
@@ -353,15 +348,15 @@ namespace Shadowsocks.Controller.Service
 
             private bool ConnectProxyServer(string strRemoteHost, int iRemotePort)
             {
-                if (_config.proxyType == 0)
+                if (_config.ProxyType == ProxyType.Socks5)
                 {
-                    var ret = _remote.ConnectSocks5ProxyServer(strRemoteHost, iRemotePort, false, _config.proxyAuthUser, _config.proxyAuthPass);
+                    var ret = _remote.ConnectSocks5ProxyServer(strRemoteHost, iRemotePort, false, _config.ProxyAuthUser, _config.ProxyAuthPass);
                     return ret;
                 }
 
-                if (_config.proxyType == 1)
+                if (_config.ProxyType == ProxyType.Http)
                 {
-                    var ret = _remote.ConnectHttpProxyServer(strRemoteHost, iRemotePort, _config.proxyAuthUser, _config.proxyAuthPass, _config.proxyUserAgent);
+                    var ret = _remote.ConnectHttpProxyServer(strRemoteHost, iRemotePort, _config.ProxyAuthUser, _config.ProxyAuthPass, _config.ProxyUserAgent);
                     return ret;
                 }
 
@@ -454,7 +449,7 @@ namespace Shadowsocks.Controller.Service
                 }
                 try
                 {
-                    Server.GetForwardServerRef().GetConnections().AddRef(this);
+                    Server.ForwardServer.Connections.AddRef(this);
                     _remote.BeginReceive(remoteRecvBuffer, RecvSize, SocketFlags.None, PipeRemoteReceiveCallback, null);
                     _local.BeginReceive(connetionRecvBuffer, RecvSize, SocketFlags.None, PipeConnectionReceiveCallback, null);
 
@@ -624,7 +619,7 @@ namespace Shadowsocks.Controller.Service
                 Thread.Sleep(100);
                 CloseSocket(_remote);
                 CloseSocket(_local);
-                Server.GetForwardServerRef().GetConnections().DecRef(this);
+                Server.ForwardServer.Connections.DecRef(this);
             }
 
             public override void Shutdown()

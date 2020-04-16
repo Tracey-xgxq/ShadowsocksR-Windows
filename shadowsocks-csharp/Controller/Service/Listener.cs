@@ -1,4 +1,5 @@
-﻿using Shadowsocks.Model;
+﻿using Shadowsocks.Enums;
+using Shadowsocks.Model;
 using Shadowsocks.Util;
 using Shadowsocks.Util.NetUtils;
 using System;
@@ -49,10 +50,10 @@ namespace Shadowsocks.Controller.Service
         public void Start(Configuration config, int port)
         {
             _config = config;
-            _shareOverLan = config.shareOverLan;
-            _authUser = config.authUser;
+            _shareOverLan = config.ShareOverLan;
+            _authUser = config.AuthUser;
 
-            var localPort = port == 0 ? _config.localPort : port;
+            var localPort = port == 0 ? _config.LocalPort : port;
             if (CheckIfPortInUse(localPort))
             {
                 throw new Exception(string.Format(I18NUtil.GetAppStringValue(@"PortInUse"), localPort));
@@ -70,7 +71,7 @@ namespace Shadowsocks.Controller.Service
                 _socket.Listen(1024);
 
                 // IPv6
-                if (GlobalConfiguration.OSSupportsLocalIPv6)
+                if (Global.OSSupportsLocalIPv6)
                 {
                     try
                     {
@@ -147,8 +148,8 @@ namespace Shadowsocks.Controller.Service
                 var localPort = ((IPEndPoint)conn.LocalEndPoint).Port;
 
                 if ((_authUser ?? string.Empty).Length == 0 && !IPSubnet.IsLan(conn)
-                    && !(_config.GetPortMapCache().ContainsKey(localPort)
-                    || _config.GetPortMapCache()[localPort].type == PortMapType.Forward))
+                    && !(_config.PortMapCache.ContainsKey(localPort)
+                    || _config.PortMapCache[localPort].type == PortMapType.Forward))
                 {
                     conn.Shutdown(SocketShutdown.Both);
                     conn.Close();
@@ -161,20 +162,22 @@ namespace Shadowsocks.Controller.Service
                         buf
                     };
 
-                    if (!_config.GetPortMapCache().ContainsKey(localPort) || _config.GetPortMapCache()[localPort].type != PortMapType.Forward)
-                    {
-                        conn.BeginReceive(buf, 0, buf.Length, 0, ReceiveCallback, state);
-                    }
-                    else
+                    if (_config.PortMapCache.TryGetValue(localPort, out var portMap)
+                    && portMap.type == PortMapType.Forward)
                     {
                         if (_services.Any(service => service.Handle(buf, 0, conn)))
                         {
                             return;
                         }
+
                         // no service found for this
                         // shouldn't happen
                         conn.Shutdown(SocketShutdown.Both);
                         conn.Close();
+                    }
+                    else
+                    {
+                        conn.BeginReceive(buf, 0, buf.Length, 0, ReceiveCallback, state);
                     }
                 }
             }

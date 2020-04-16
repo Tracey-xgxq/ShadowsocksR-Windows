@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
 	
 	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -31,43 +31,42 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <None Remove="Controls\MaskedTextBox.xaml" />
-    <None Remove="Controls\NumberUpDown.xaml" />
+    <None Remove="View\Controls\MaskedTextBox.xaml" />
+    <None Remove="View\Controls\NumberUpDown.xaml" />
     <None Remove="Resources\ssw128.png" />
-    <None Remove="View\ConfigWindow.xaml" />
-    <None Remove="View\InputPasswordWindow.xaml" />
     <None Remove="View\LogWindow.xaml" />
     <None Remove="View\PortSettingsWindow.xaml" />
     <None Remove="View\QRCodeSplashWindow.xaml" />
-    <None Remove="View\ResetPassword.xaml" />
     <None Remove="View\ServerLogWindow.xaml" />
     <None Remove="View\ShowTextWindow.xaml" />
     <None Remove="View\SubscribeWindow.xaml" />
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="4.1.0" Condition=" '$(SelfContained)' != 'true' " />
-    <PackageReference Include="DnsClient" Version="1.2.0" />
-    <PackageReference Include="Fody" Version="6.0.0" Condition=" '$(SelfContained)' != 'true' ">
+    <Resource Include="..\pic\wechat.jpg" Link="Resources\wechat.jpg" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" Version="4.1.0" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' " />
+    <PackageReference Include="Fody" Version="6.0.4" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' ">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' " />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.0.8" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="17.4.0.46" />
+    <PackageReference Include="Syncfusion.Tools.WPF" Version="17.4.0.46" />
+    <PackageReference Include="ARSoft.Tools.Net" Version="2.3.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="WpfColorFontDialog" Version="1.0.6" />
-    <PackageReference Include="ZXing.Net" Version="0.16.4" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' " />
+    <PackageReference Include="System.Reactive" Version="4.3.2" />
+    <PackageReference Include="WpfColorFontDialog" Version="1.0.7" />
+    <PackageReference Include="ZXing.Net" Version="0.16.5" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' " />
     <PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.6" Condition=" '$(TargetFramework.StartsWith(netcoreapp))' == 'true' " />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework.StartsWith(netcoreapp))' != 'true' ">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.IO.Compression" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controller\SystemProxy\" />
-    <Folder Include="Util\SingleInstance\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -86,6 +85,51 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Page Update="I18N\SettingsWindow.en-US.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\SettingsWindow.zh-CN.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\SettingsWindow.zh-TW.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\PortSettingsWindow.en-US.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\PortSettingsWindow.zh-CN.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\PortSettingsWindow.zh-TW.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\ServerLogWindow.en-US.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\ServerLogWindow.zh-CN.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\ServerLogWindow.zh-TW.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\LogWindow.en-US.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\LogWindow.zh-CN.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\LogWindow.zh-TW.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\DnsSettingWindow.en-US.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\DnsSettingWindow.zh-CN.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="I18N\DnsSettingWindow.zh-TW.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="I18N\SubscribeWindow.en-US.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -105,5 +149,13 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="cd &quot;$(ProjectDir)&quot;&#xD;&#xA;&#xD;&#xA;SyncfusionLicenseRegister.bat PreBuild Program.cs" />
+  </Target>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cd &quot;$(ProjectDir)&quot;&#xD;&#xA;&#xD;&#xA;SyncfusionLicenseRegister.bat PostBuild Program.cs" />
+  </Target>
 
 </Project>
